@@ -11,14 +11,13 @@ class ColorPicker:
     def __init__(self, img, color_data):
         self.img = img
         self.color_data = color_data
-        self.color_name = ''
+        self.selected_color = None
         self.clicked = False
         self.color_rgb =[0, 0, 0] #! [R, G, B]
         self._position = {'x': 0, 'y': 0}
 
     @property
     def position(self):
-        print(f'''({self._position['x'], self._position['y']})''')
         return self._position
 
     @position.setter
@@ -40,6 +39,7 @@ class ColorPicker:
             return (self.color_rgb[0], self.color_rgb[1], self.color_rgb[2])
 
     def set_color_rgb(self, values, format=''):
+        values = [int(n) for n in values]
         if format == 'bgr':
             self.color_rgb = (values[2], values[1], values[0])
             return
@@ -66,11 +66,13 @@ class ColorPicker:
         # This formula is used to calculate the distance between 2 points in a 
         # 3D space 
         distances = np.sqrt(np.sum((colors - selected_color)**2, axis=1))
-        index_smallest = np.where(distances==np.amin(distances))
+        index_smallest = np.argmin(distances)
 
-        self.color_name = self.color_data.loc[index_smallest, 'color_name']
-        print(self.color_name)
+        self.selected_color = self.color_data.iloc[index_smallest]
 
+
+    def __str__(self):
+        return f'''{self.selected_color['color_name']} Hex={self.selected_color['hex']}'''
 
 def get_image():
     '''Get the selected image information'''
@@ -106,44 +108,33 @@ def main():
 
         cv2.imshow("image", picker.img)
         cv2.waitKey(20)
-        #if (picker.clicked):
+        if (picker.clicked):
+            cv2.rectangle(picker.img, (20,20), (750,60), picker.get_rgb('bgr'), -1)
 
-            #cv2.rectangle(image, startpoint, endpoint, color, thickness)-1 fills entire rectangle 
-            #cv2.rectangle(img,(20,20), (750,60), (b,g,r), -1)
+            print_text(picker, (255,255,255))
 
-        #     #Creating text string to display( Color name and RGB values )
-        #     text = get_color_name(r,g,b) + ' R='+ str(r) +  ' G='+ str(g) +  ' B='+ str(b)
-            
-        #     #cv2.putText(img,text,start,font(0-7),fontScale,color,thickness,lineType )
-        #     cv2.putText(img=picker.img,
-        #                 text=text, 
-        #                 start=(50,50), 
-        #                 fontFace=2, 
-        #                 fontScale=0.8, 
-        #                 color=(255,255,255), 
-        #                 thickness=2, 
-        #                 lineType=cv2.LINE_AA
-        #                 )
-
-        #     #For very light colours we will display text in black colour
-        #     if(sum(picker.color_rgb) >= 600):
-        #         cv2.putText(
-        #             img=img, 
-        #             text=text, 
-        #             start=(50,50),
-        #             fontFace=2, 
-        #             fontScale=0.8, 
-        #             color=(0,0,0), 
-        #             thickness=2, 
-        #             lineType=cv2.LINE_AA)
+            # For light colours we will display text in black
+            if(sum(picker.color_rgb) >= 600):
+                print_text(picker, (0,0,0))
                 
-        #     picker.clicked=False
+            picker.clicked=False
 
         #Break the loop when user hits 'esc' key    
         if cv2.waitKey(20) & 0xFF ==27:
             break
   
     cv2.destroyAllWindows()
+
+def print_text(picker, color):
+    cv2.putText(img=picker.img,
+                        text=str(picker), 
+                        org=(50,50), 
+                        fontFace=2, 
+                        fontScale=0.8, 
+                        color=color, 
+                        thickness=2, 
+                        lineType=cv2.LINE_AA
+                        )
 
 if __name__ == "__main__":
     main()
