@@ -2,6 +2,7 @@ import cv2
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
+import numpy as np
 
 root = tk.Tk()
 root.withdraw()
@@ -10,6 +11,7 @@ class ColorPicker:
     def __init__(self, img, color_data):
         self.img = img
         self.color_data = color_data
+        self.color_name = ''
         self.clicked = False
         self.color_rgb =[0, 0, 0] #! [R, G, B]
         self._position = {'x': 0, 'y': 0}
@@ -18,18 +20,11 @@ class ColorPicker:
     def position(self):
         print(f'''({self._position['x'], self._position['y']})''')
         return self._position
-        
+
     @position.setter
     def position(self, value):
         self._position['x'] = value[0]
         self._position['y'] = value[1]
-
-    def draw(self, event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDBLCLK:
-            self.clicked = True
-            self.position = (x, y)
-            self.set_color_rgb(self.img[y,x], 'bgr')
-
 
     def get_rgb(self, format=''):
         '''Retrieve the selected color in different formats'''
@@ -40,35 +35,42 @@ class ColorPicker:
         elif format == 'b':
             return self.color_rgb[2]
         elif format == 'bgr':
-            print((self.color_rgb[2], self.color_rgb[1], self.color_rgb[0]))
             return (self.color_rgb[2], self.color_rgb[1], self.color_rgb[0])
         else:
             return (self.color_rgb[0], self.color_rgb[1], self.color_rgb[2])
 
     def set_color_rgb(self, values, format=''):
         if format == 'bgr':
-            self.color_rgb = [values[2],values[1],values[0]]
+            self.color_rgb = (values[2], values[1], values[0])
             return
         
         self.color_rgb = values
         
+    def draw(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDBLCLK:
+            self.clicked = True
+            self.position = (x, y)
+            self.set_color_rgb(self.img[y,x], 'bgr')
+            self.get_color_name()
 
-# def draw(event, x, y, flags, param):
-#     picker = param['picker']
-#     if event == cv2.EVENT_LBUTTONDBLCLK:
-#         picker.clicked = True
-#         picker.position['x'] = x
-#         ypos = y
-#         b, g, r = img[y, x]
+    def get_color_name(self):
+        '''Get the name of the closest color in the csv file'''
+        colors = np.array([
+            (self.color_data.loc[i,'R'], 
+            self.color_data.loc[i,'G'], 
+            self.color_data.loc[i,'B'])
+            for i in range(len(self.color_data))
+            ])
+        selected_color = np.array(self.get_rgb())
 
-def get_color_name(R, G, B):
-    minimum = 10000
-    for i in range(len(csv)):
-        d = abs(R- int(csv.loc[i,"R"])) + abs(G- int(csv.loc[i,"G"]))+ abs(B- int(csv.loc[i,"B"]))
-        if(d<=minimum):
-            minimum = d
-            cname = csv.loc[i,"color_name"]
-    return cname
+        # This formula is used to calculate the distance between 2 points in a 
+        # 3D space 
+        distances = np.sqrt(np.sum((colors - selected_color)**2, axis=1))
+        index_smallest = np.where(distances==np.amin(distances))
+
+        self.color_name = self.color_data.loc[index_smallest, 'color_name']
+        print(self.color_name)
+
 
 def get_image():
     '''Get the selected image information'''
