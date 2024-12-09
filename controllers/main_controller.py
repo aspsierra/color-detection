@@ -14,14 +14,8 @@ class MainController:
 
     def run(self):
         """Run the application."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            caption="Select an Image", 
-            directory="", 
-            filter="Image Files (*.jpg *.jpeg *.png *.bmp *.tiff);;All Files (*)"
-        )
-        if file_path:
-            self.view.load_image(file_path)
-            self.view.show()
+        self.view.open_file_dialog()
+        self.view.show()
 
     def handle_color_selection(self, rgb):
         """Handle color selection and update the view."""

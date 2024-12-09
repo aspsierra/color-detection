@@ -1,11 +1,20 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QFileDialog
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow, 
+    QLabel, 
+    QVBoxLayout, 
+    QWidget, 
+    QToolBar, 
+    QAction,
+    QFileDialog
+)
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 import cv2
 import numpy as np
 
 
-class ImageView(QWidget):
+class ImageView(QMainWindow):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
@@ -14,11 +23,33 @@ class ImageView(QWidget):
         self.init_ui()
 
     def init_ui(self):
+
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
         layout = QVBoxLayout()
         layout.addWidget(self.image_label)
         layout.addWidget(self.color_label)
+        self.central_widget.setLayout(layout)
+
+        self.toolbar = QToolBar("Main Toolbar")
+        self.addToolBar(self.toolbar)
+
+        folder_icon = QApplication.style().standardIcon(QApplication.style().SP_DirOpenIcon)
+        load_image_action = QAction(folder_icon, "Load Image", self)
+        load_image_action.triggered.connect(self.open_file_dialog)
+        self.toolbar.addAction(load_image_action)
+
         self.setLayout(layout)
         self.setWindowTitle("Color Picker")
+
+    def open_file_dialog(self):
+        """Open a file dialog to select an image file."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Image File", "", "Image Files (*.png *.jpg *.jpeg *.bmp *.tiff)"
+        )
+        if file_path:
+            self.load_image(file_path)
 
     def load_image(self, file_path):
         """Load and display the image."""
